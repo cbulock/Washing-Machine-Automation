@@ -1,5 +1,10 @@
+#!/usr/bin/env nodejs
+
 var greenBean = require("green-bean");
-var http = require('http');
+var mqtt = require('mqtt');
+
+var host = 'mqtt';
+var mqtt_client = mqtt.connect( 'mqtt://' + host );
 
 var machineStatus = {
 	0:	'Idle',
@@ -38,82 +43,16 @@ greenBean.connect("laundry", function(laundry) {
 
     laundry.machineStatus.subscribe(function (value) {
         console.log("machine status changed:", value);
-	var postData = JSON.stringify({
-		"state" : machineStatus[value],
-		"attributes": {
-			"friendly_name": "Status"
-		}
-	});
-	var req = http.request(
-		{
-			host: 'ha',
-			port: '8123',
-			path: '/api/states/sensor.washing_machine',
-			method: 'POST',
-			headers: {
-			 	'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': postData.length,
-				'x-ha-access': 'PASSWORD'
-			}
-		}
-	);
-
-	req.write(postData);
-	req.end();
+	mqtt_client.publish('home/washer/status', machineStatus[value], {retain: true, qos: 1});
     });
 
     laundry.machineSubCycle.subscribe(function (value) {
         console.log("machine sub-cycle changed:", value);
-        var postData = JSON.stringify({
-                "state" : machineSubStatus[value],
-		"attributes": {
-	                "friendly_name": "Cycle"
-		}
-        });
-        var req = http.request(
-                {
-                        host: 'ha',
-                        port: '8123',
-                        path: '/api/states/sensor.washing_machine_cycle',
-                        method: 'POST',
-                        headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'Content-Length': postData.length,
-                                'x-ha-access': 'PASSWORD'
-                        }
-                }
-        );
-
-        req.write(postData);
-        req.end();
-
+	mqtt_client.publish('home/washer/cycle', machineSubStatus[value], {retain: true, qos: 1});
     });
 
     laundry.timeRemainingInSeconds.subscribe(function (value) {
         console.log("time remaining changed:", value);
-        var postData = JSON.stringify({
-                "state" : value,
-		"attributes": {
-                	"friendly_name": "Time Remaining",
-			"unit_of_measurement": "seconds"
-		}
-        });
-        var req = http.request(
-                {
-                        host: 'ha',
-                        port: '8123',
-                        path: '/api/states/sensor.washing_machine_time',
-                        method: 'POST',
-                        headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'Content-Length': postData.length,
-                                'x-ha-access': 'PASSWORD'
-                        }
-                }
-        );
-
-        req.write(postData);
-        req.end();
-
+	mqtt_client.publish('home/washer/time_remaining', value.toString(), {retain: true});
     });
 });
