@@ -3,6 +3,8 @@
 var greenBean = require("green-bean");
 var mqtt = require('mqtt');
 
+require('events').EventEmitter.prototype._maxListeners = 100;
+
 var host = 'mqtt';
 var mqtt_client = mqtt.connect( 'mqtt://' + host );
 
